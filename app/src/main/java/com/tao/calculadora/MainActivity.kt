@@ -13,11 +13,11 @@ class MainActivity : AppCompatActivity()
     //binding
     private lateinit var binding : ActivityMainBinding
 
-    //other
-    private var firstnumber = ""
-    private var currentNumber = ""
-    private var currentOperator = ""
-    private var result = ""
+    private var numeroInicial = ""
+    private var numeroFinal = ""
+    private var operador = ""
+    private var resultado = ""
+    private var formula = ""
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState : Bundle?)
     {
@@ -27,66 +27,100 @@ class MainActivity : AppCompatActivity()
 
         //NoLimitScreen
         window.setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-        //initViews
+
         binding.apply {
-            // get all buttons
+
             binding.layoutMain.children.filterIsInstance<Button>().forEach { button ->
                 //buttons click listener
                 button.setOnClickListener {
                     //get clicked button text
-                    val buttonText = button.text.toString()
+                    val textoBoton = button.text.toString()
                     when{
-                        buttonText.matches(Regex("[0-9]"))->{
-                            if(currentOperator.isEmpty())
+                        //Logica para numeros
+                        textoBoton.matches(Regex("[0-9]"))->{
+                            if(operador.isEmpty())
                             {
-                                firstnumber+=buttonText
-                                tvResultado.text = firstnumber
+                                numeroInicial+=textoBoton
+                                formula+=textoBoton
+                                tvFormula.text = formula
+                                tvResultado.text = numeroInicial
                             }else
                             {
-                                currentNumber+=buttonText
-                                tvResultado.text = currentNumber
+                                numeroFinal+=textoBoton
+                                formula+=textoBoton
+                                tvFormula.text = formula
+                                resultado = resolverOperacion(numeroInicial,numeroFinal,operador)
+                                tvResultado.text = resultado
+
                             }
                         }
-                        buttonText.matches(Regex("[+\\-*/]"))->{
-                            currentNumber = ""
-                            if (tvResultado.text.toString().isNotEmpty())
+                        //Logica para operadores
+                        textoBoton.matches(Regex("[+\\-*/]"))->{
+                            if (numeroFinal.isEmpty()&& operador.isEmpty()) {
+                                if (numeroInicial.isNotEmpty()) {
+                                    operador = textoBoton
+                                    tvResultado.text = "0"
+                                    formula+=textoBoton
+                                    tvFormula.text = formula
+                                }
+                            }else{
+                                if (numeroFinal.isNotEmpty()) {
+                                    numeroInicial=resultado
+                                    numeroFinal=""
+                                    operador = textoBoton
+                                    tvResultado.text = resultado
+                                    formula+=textoBoton
+                                    tvFormula.text = formula
+                                }else{
+                                    formula= formula.removeSuffix(operador)
+                                    operador = textoBoton
+                                    formula+=textoBoton
+                                    tvFormula.text = formula
+                                }
+                            }
+
+                        }
+                        //Logica para igual
+                        textoBoton == "="->{
+                            if (numeroFinal.isNotEmpty()&& operador.isNotEmpty())
                             {
-                                currentOperator = buttonText
-                                tvResultado.text = "0"
+                                formula = resultado
+                                tvFormula.text = formula
+                                resultado = resolverOperacion(numeroInicial,numeroFinal,operador)
+                                tvResultado.text = ""
+                                numeroInicial = resultado
+                                resultado = ""
+                                numeroFinal = ""
+                                operador = ""
                             }
                         }
-                        buttonText == "="->{
-                            if (currentNumber.isNotEmpty()&& currentOperator.isNotEmpty())
+                        //Logica para decimales
+                        textoBoton == "."->{
+                            if(operador.isEmpty())
                             {
-                                tvFormula.text = "$firstnumber$currentOperator$currentNumber"
-                                result = evaluateExpression(firstnumber,currentNumber,currentOperator)
-                                firstnumber = result
-                                tvResultado.text = result
-                            }
-                        }
-                        buttonText == "."->{
-                            if(currentOperator.isEmpty())
-                            {
-                                if (! firstnumber.contains("."))
+                                if (! numeroInicial.contains("."))
                                 {
-                                    if(firstnumber.isEmpty())firstnumber+="0$buttonText"
-                                    else firstnumber +=buttonText
-                                    tvResultado.text = firstnumber
+                                    if(numeroInicial.isEmpty())numeroInicial += "0$textoBoton"
+                                    else numeroInicial += textoBoton
+                                    tvResultado.text = numeroInicial
                                 }
                             }else
                             {
-                                if (! currentNumber.contains("."))
+                                if (! numeroFinal.contains("."))
                                 {
-                                    if(currentNumber.isEmpty()) currentNumber+="0$buttonText"
-                                    else currentNumber +=buttonText
-                                    tvResultado.text = currentNumber
+                                    if(numeroFinal.isEmpty()) numeroFinal += "0$textoBoton"
+                                    else numeroFinal += textoBoton
+                                    tvResultado.text = numeroFinal
                                 }
                             }
                         }
-                        buttonText == "C"->{
-                            currentNumber = ""
-                            firstnumber = ""
-                            currentOperator = ""
+                        //Logica para borrar
+                        textoBoton == "C"->{
+                            numeroFinal = ""
+                            numeroInicial = ""
+                            operador = ""
+                            resultado = ""
+                            formula = ""
                             tvResultado.text = "0"
                             tvFormula.text = ""
                         }
@@ -98,12 +132,12 @@ class MainActivity : AppCompatActivity()
         }
     }
 
-    //functions
-    private fun evaluateExpression(firstNumber:String,secondNumber:String,operator:String):String
+    //funcion que resuelve las operaciones matematicas
+    private fun resolverOperacion(numeroUno:String, numeroDos:String, operacion:String):String
     {
-        val num1  = firstNumber.toDouble()
-        val num2  = secondNumber.toDouble()
-        return when(operator)
+        val num1  = numeroUno.toDouble()
+        val num2  = numeroDos.toDouble()
+        return when(operacion)
         {
             "+"-> (num1+num2).toString()
             "-"-> (num1-num2).toString()
